@@ -1,0 +1,22 @@
+{
+  "name": "reminiscence-radio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A tabletop tube radio that plays a calm daily show for a person with memory loss",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "vite": "^8.3.8"
+  }
+}
