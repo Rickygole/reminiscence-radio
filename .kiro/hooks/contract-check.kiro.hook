@@ -1,0 +1,7 @@
+{
+  "name": "Contract check",
+  "version": "1",
+  "description": "Run the tests when a contract schema or the demo show changes",
+  "when": { "type": "fileEdited", "patterns": ["contract/*.json", "public/demo/show.json", "public/demo/events.json"] },
+  "then": { "type": "askAgent", "prompt": "A contract file or the demo show changed. Run npm test and report any failure. The schemas must stay byte identical with the crew repository." }
+}

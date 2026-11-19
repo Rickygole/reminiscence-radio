@@ -1,0 +1,7 @@
+{
+  "name": "Accessibility review",
+  "version": "1",
+  "description": "Review calm design rules when markup or styles change",
+  "when": { "type": "fileEdited", "patterns": ["*.html", "src/**/*.css", "src/radio/radio-markup.js"] },
+  "then": { "type": "askAgent", "prompt": "Check the change against .kiro/steering/calm-design.md: slow motion, reduced motion and simple mode respected, contrast at least 4.5:1, visible 3 px focus, keyboard access and a hit target of at least 160 px for the knob." }
+}
