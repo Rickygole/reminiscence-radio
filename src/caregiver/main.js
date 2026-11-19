@@ -129,7 +129,7 @@ document.getElementById('rem-form').addEventListener('submit', (e) => {
   for (const input of remList.querySelectorAll('input[data-reminder-id]')) {
     const value = sanitizeReminder(input.value)
     const base = reminders.find((r) => r.reminderId === input.dataset.reminderId)
-    if (value && base && value !== base.text) overrides[input.dataset.reminderId] = value
+    if (value && base && value !== base.text) overrides[input.dataset.reminderId] = { base: base.text, text: value }
   }
   saveOverrides(overrides)
   renderReminders()

@@ -3,6 +3,8 @@ export const DEMO_URL = './demo/show.json'
 export const LIVE_URL = 'https://rickygole.github.io/reminiscence-radio-crew/show/latest.json'
 export const LIVE_EVENTS_URL = 'https://rickygole.github.io/reminiscence-radio-crew/events/latest.json'
 export const MAX_REMINDER = 200
+export const MAX_TEXT = 600
+export const MAX_NAME = 60
 
 const CONTROL = /[\u0000-\u001f\u007f]/g
 
@@ -11,17 +13,17 @@ export const sanitizeReminder = (text) => String(text ?? '').replace(CONTROL, ' 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const isStr = (v) => typeof v === 'string' && v.length > 0
 
-const resolveSrc = (src, base) => {
+const resolveSrc = (src, base, origin) => {
   if (!isStr(src)) return null
   try {
     const url = new URL(src, base)
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.origin === origin ? url.href : null
   } catch {
     return null
   }
 }
 
-const cleanAudio = (audio, base) => {
+const cleanAudio = (audio, base, origin) => {
   if (!isObj(audio)) return null
   if (audio.speak === true) return { speak: true }
   if (isObj(audio.synth)) {
@@ -29,22 +31,23 @@ const cleanAudio = (audio, base) => {
     const ok = ['doowop_ballad', 'lounge_swing', 'country_waltz'].includes(s.recipe) && Number.isFinite(s.seed) && Number.isFinite(s.bpm) && isStr(s.key) && Number.isFinite(s.seconds)
     return ok ? { synth: { recipe: s.recipe, seed: s.seed, bpm: s.bpm, key: s.key, seconds: s.seconds } } : null
   }
-  const src = resolveSrc(audio.src, base)
+  const src = resolveSrc(audio.src, base, origin)
   return src ? { src, ...(Number.isFinite(audio.durationMs) ? { durationMs: audio.durationMs } : {}) } : null
 }
 
-const cleanSegment = (seg, base) => {
+const cleanSegment = (seg, base, origin) => {
   if (!isObj(seg) || !KINDS.has(seg.kind) || !isStr(seg.id)) return null
-  const audio = cleanAudio(seg.audio, base)
+  const audio = cleanAudio(seg.audio, base, origin)
   if (!audio) return null
   const out = { ...seg, audio }
   if (seg.kind === 'song' && audio.speak) return null
   if (seg.kind === 'voice_message') {
     if (audio.speak || audio.synth || !isStr(seg.caption)) return null
+    if (!isObj(seg.from) || !isStr(seg.from.name) || !isStr(seg.from.relation) || seg.from.name.length > MAX_NAME || seg.from.relation.length > MAX_NAME) return null
     if (isObj(seg.photo)) {
-      const src = resolveSrc(seg.photo.src, base)
+      const src = resolveSrc(seg.photo.src, base, origin)
       if (src && isStr(seg.photo.alt)) {
-        const depthSrc = resolveSrc(seg.photo.depthSrc, base)
+        const depthSrc = resolveSrc(seg.photo.depthSrc, base, origin)
         out.photo = { src, alt: seg.photo.alt, ...(depthSrc ? { depthSrc } : {}) }
       } else delete out.photo
     }
@@ -52,15 +55,16 @@ const cleanSegment = (seg, base) => {
     if (!isStr(seg.title)) return null
   } else {
     if (audio.synth || !isStr(seg.text)) return null
+    if (seg.kind !== 'reminder' && seg.text.length > MAX_TEXT) return null
     if (seg.kind === 'reminder') out.text = sanitizeReminder(seg.text)
     if (seg.kind === 'reminder' && !out.text) return null
   }
   return out
 }
 
-export const validateShow = (doc, base) => {
-  if (!isObj(doc) || doc.schemaVersion !== 1 || !Array.isArray(doc.segments) || !isObj(doc.listener)) return null
-  const segments = doc.segments.map((s) => cleanSegment(s, base)).filter(Boolean)
+export const validateShow = (doc, base, origin = new URL(base).origin) => {
+  if (!isObj(doc) || doc.schemaVersion !== 1 || !Array.isArray(doc.segments) || !isObj(doc.listener) || !isStr(doc.listener.name) || doc.listener.name.length > MAX_NAME) return null
+  const segments = doc.segments.map((s) => cleanSegment(s, base, origin)).filter(Boolean)
   if (!segments.length) return null
   return { ...doc, segments, safety: isObj(doc.safety) ? doc.safety : { rulesVersion: '1', llmReview: false, blocked: [], fixed: [] } }
 }
@@ -68,8 +72,9 @@ export const validateShow = (doc, base) => {
 export const applyOverrides = (show, overrides = {}) => ({
   ...show,
   segments: show.segments.map((seg) => {
-    if (seg.kind !== 'reminder' || typeof overrides[seg.reminderId] !== 'string') return seg
-    const text = sanitizeReminder(overrides[seg.reminderId])
+    const saved = overrides[seg.reminderId]
+    if (seg.kind !== 'reminder' || !isObj(saved) || saved.base !== seg.text || typeof saved.text !== 'string') return seg
+    const text = sanitizeReminder(saved.text)
     return text ? { ...seg, text, audio: { speak: true } } : seg
   })
 })
@@ -83,7 +88,7 @@ const attempt = async (url, fetchFn, baseHref, mediaBase) => {
     const res = await fetchFn(target)
     if (!res.ok) return null
     const doc = await res.json()
-    return validateShow(doc, mediaBase ?? dirOf(target))
+    return validateShow(doc, mediaBase ?? dirOf(target), new URL(target).origin)
   } catch {
     return null
   }

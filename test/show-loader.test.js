@@ -64,7 +64,8 @@ test('a song with speech audio is skipped', () => {
 
 test('overrides merge by reminderId, are trimmed, stripped and capped at 200', () => {
   const show = validateShow(demo, 'https://radio.test/demo/')
-  const out = applyOverrides(show, { 'rem-lunch': `  Soup\u0007 is ready  ${'x'.repeat(300)}`, nope: 'ignored' })
+  const lunchBase = show.segments.find((s) => s.reminderId === 'rem-lunch').text
+  const out = applyOverrides(show, { 'rem-lunch': { base: lunchBase, text: `  Soup\u0007 is ready  ${'x'.repeat(300)}` }, nope: { base: 'a', text: 'ignored' } })
   const lunch = out.segments.find((s) => s.reminderId === 'rem-lunch')
   assert.equal(lunch.text.length, 200)
   assert.ok(lunch.text.startsWith('Soup is ready'))
@@ -74,10 +75,41 @@ test('overrides merge by reminderId, are trimmed, stripped and capped at 200', (
 
 test('empty override keeps the original text', () => {
   const show = validateShow(demo, 'https://radio.test/demo/')
-  const out = applyOverrides(show, { 'rem-lunch': '   \u0007 ' })
+  const out = applyOverrides(show, { 'rem-lunch': { base: 'Time for lunch, Rose.', text: '   \u0007 ' } })
   assert.equal(out.segments.find((s) => s.reminderId === 'rem-lunch').text, 'Time for lunch, Rose.')
 })
 
 test('sanitizeReminder strips control characters', () => {
   assert.equal(sanitizeReminder('a\u0000b\nc'), 'a b c')
+})
+
+test('an override is dropped when the show text it was written against has changed', () => {
+  const show = validateShow(demo, 'https://radio.test/demo/')
+  const out = applyOverrides(show, { 'rem-lunch': { base: 'Old lunch line', text: 'Soup is ready' }, 'rem-pill': 'plain string' })
+  assert.equal(out.segments.find((s) => s.reminderId === 'rem-lunch').text, 'Time for lunch, Rose.')
+  assert.equal(out.segments.find((s) => s.reminderId === 'rem-pill').text, show.segments.find((s) => s.reminderId === 'rem-pill').text)
+})
+
+test('media on another origin than the show is skipped, photo and depth included', () => {
+  const other = (s) => (s.kind === 'voice_message' ? { ...s, audio: { src: 'https://evil.test/a.mp3' } } : s)
+  assert.ok(!validateShow({ ...demo, segments: demo.segments.map(other) }, 'https://radio.test/demo/').segments.some((s) => s.kind === 'voice_message'))
+  const photo = (s) => (s.kind === 'voice_message' ? { ...s, photo: { ...s.photo, src: 'https://evil.test/p.png', depthSrc: 'https://evil.test/d.png' } } : s)
+  const voice = validateShow({ ...demo, segments: demo.segments.map(photo) }, 'https://radio.test/demo/').segments.find((s) => s.kind === 'voice_message')
+  assert.equal(voice.photo, undefined)
+})
+
+test('a live show whose media points at another origin loses those segments', async () => {
+  const doc = { ...demo, segments: demo.segments.map((s) => (s.kind === 'voice_message' ? { ...s, audio: { src: '//evil.test/a.mp3' } } : s)) }
+  const { show } = await load({ [liveUrl]: doc })
+  assert.ok(!show.segments.some((s) => s.kind === 'voice_message'))
+})
+
+test('voice messages need a bounded sender, and long host text or listener names are rejected', () => {
+  const base = 'https://radio.test/demo/'
+  const voiceDoc = (from) => ({ ...demo, segments: demo.segments.map((s) => (s.kind === 'voice_message' ? { ...s, from } : s)) })
+  assert.ok(!validateShow(voiceDoc(undefined), base).segments.some((s) => s.kind === 'voice_message'))
+  assert.ok(!validateShow(voiceDoc({ name: 'x'.repeat(100), relation: 'son' }), base).segments.some((s) => s.kind === 'voice_message'))
+  const hostDoc = { ...demo, segments: demo.segments.map((s) => (s.kind === 'host' ? { ...s, text: 'a'.repeat(700) } : s)) }
+  assert.ok(!validateShow(hostDoc, base).segments.some((s) => s.kind === 'host'))
+  assert.equal(validateShow({ ...demo, listener: { ...demo.listener, name: '' } }, base), null)
 })
