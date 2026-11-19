@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "showId": "2026-12-04-rose",
+  "date": "2026-12-04",
+  "mode": "demo",
+  "listener": {
+    "name": "Rose",
+    "birthYear": 1946,
+    "fictional": true
+  },
+  "generatedAt": "2026-12-04T10:00:00Z",
+  "runId": "demo-2026-12-04",
+  "segments": [
+    {
+      "id": "greeting",
+      "kind": "host",
+      "text": "Good morning, Rose. Your grandson Leo sent you something.",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "tg-1042",
+        "tg-1043"
+      ]
+    },
+    {
+      "id": "voice-1",
+      "kind": "voice_message",
+      "from": {
+        "name": "Leo",
+        "relation": "grandson"
+      },
+      "caption": "A message from Leo, your grandson",
+      "performedByVolunteer": false,
+      "audio": {
+        "src": "media/leo.mp3",
+        "durationMs": 5200
+      },
+      "sourceItemIds": [
+        "tg-1042",
+        "tg-1043"
+      ],
+      "photo": {
+        "src": "media/leo.svg",
+        "alt": "A warm illustrated porch swing at sunset, standing in for Leo's photo",
+        "depthSrc": "media/leo-depth.png"
+      }
+    },
+    {
+      "id": "note-1",
+      "kind": "host",
+      "text": "Mia wanted you to know: The tomatoes you planted are finally ripe.",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "tg-1041"
+      ]
+    },
+    {
+      "id": "song-1",
+      "kind": "song",
+      "title": "Porch Light Waltz",
+      "era": "1959",
+      "credit": {
+        "author": "Reminiscence Radio team",
+        "license": "CC0-1.0",
+        "source": "src/radio/song-synth.js"
+      },
+      "audio": {
+        "synth": {
+          "recipe": "doowop_ballad",
+          "seed": 59,
+          "bpm": 66,
+          "key": "Bb",
+          "seconds": 50
+        }
+      },
+      "sourceItemIds": []
+    },
+    {
+      "id": "caregiver-intro",
+      "kind": "host",
+      "text": "Here is a note from your caregiver.",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "rem-pill",
+        "rem-lunch"
+      ]
+    },
+    {
+      "id": "reminder-rem-pill",
+      "kind": "reminder",
+      "reminderId": "rem-pill",
+      "time": "09:00",
+      "author": "caregiver",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "rem-pill"
+      ],
+      "text": "Time for your 9 o'clock pill, Rose."
+    },
+    {
+      "id": "reminder-rem-lunch",
+      "kind": "reminder",
+      "reminderId": "rem-lunch",
+      "time": "12:00",
+      "author": "caregiver",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "rem-lunch"
+      ],
+      "text": "Time for lunch, Rose."
+    },
+    {
+      "id": "story",
+      "kind": "story",
+      "text": "On this day in 1965: Two astronauts blasted off in Gemini 7 for a two week trip around the Earth. Families across the country listened on the radio and cheered them on.",
+      "year": 1965,
+      "sourceUrl": "https://www.nasa.gov/",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": [
+        "story-gemini7"
+      ]
+    },
+    {
+      "id": "song-2",
+      "kind": "song",
+      "title": "Elks Club Swing",
+      "era": "1960",
+      "credit": {
+        "author": "Reminiscence Radio team",
+        "license": "CC0-1.0",
+        "source": "src/radio/song-synth.js"
+      },
+      "audio": {
+        "synth": {
+          "recipe": "lounge_swing",
+          "seed": 60,
+          "bpm": 92,
+          "key": "F",
+          "seconds": 48
+        }
+      },
+      "sourceItemIds": []
+    },
+    {
+      "id": "goodbye",
+      "kind": "host",
+      "text": "That is all for now, Rose. Have a lovely day.",
+      "audio": {
+        "speak": true
+      },
+      "sourceItemIds": []
+    }
+  ],
+  "safety": {
+    "rulesVersion": "1",
+    "llmReview": false,
+    "blocked": [
+      {
+        "itemId": "tg-1047",
+        "rule": "dose",
+        "reason": "Mentions an amount of medicine; only the caregiver writes care instructions."
+      },
+      {
+        "itemId": "tg-1047",
+        "rule": "medical",
+        "reason": "Mentions medicine or health care; only the caregiver writes care instructions."
+      }
+    ],
+    "fixed": []
+  }
+}
