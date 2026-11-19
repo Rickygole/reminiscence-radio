@@ -147,6 +147,8 @@ const pickVoice = () => {
   return voices.find((v) => /samantha|serena|karen|moira|google us english|natural/i.test(v.name)) ?? voices[0] ?? null
 }
 
+let utterance = null
+
 const speak = (text, ms) =>
   new Promise((resolve) => {
     if (!('speechSynthesis' in window)) return setTimeout(() => resolve('ended'), ms)
@@ -159,6 +161,7 @@ const speak = (text, ms) =>
     }
     const guard = setTimeout(() => finish('ended'), ms * 1.8 + 4000)
     const u = new SpeechSynthesisUtterance(text)
+    utterance = u
     u.rate = 0.9
     u.lang = 'en-US'
     const voice = pickVoice()
@@ -167,7 +170,9 @@ const speak = (text, ms) =>
     u.onend = () => finish('ended')
     u.onerror = (e) => finish('ended', e.error === 'interrupted' || e.error === 'canceled' ? 0 : ms)
     speechSynthesis.cancel()
-    speechSynthesis.speak(u)
+    setTimeout(() => {
+      if (!done) speechSynthesis.speak(u)
+    }, 50)
   })
 
 const webgl2 = () => {
@@ -193,6 +198,8 @@ const hidePhoto = () => {
 
 const showPhoto = async (seg) => {
   const token = ++photoToken
+  photoHandle?.destroy()
+  photoHandle = null
   const { photo, from } = seg
   photoImg.src = photo.src
   photoImg.alt = photo.alt
@@ -227,7 +234,7 @@ const chime = async (fallbackMs) => {
 
 const playSegment = async (seg) => {
   const g = ensureGraph()
-  if (seg.kind !== 'voice_message') hidePhoto()
+  if (seg.kind !== 'voice_message' || !seg.photo) hidePhoto()
   if (seg.kind === 'song') {
     const buffer = await prepareSong(seg)
     const seconds = buffer.samples.length / buffer.rate
@@ -240,7 +247,7 @@ const playSegment = async (seg) => {
     runCaptions(voiceCaption(seg), ms + 600)
     if (seg.photo) showPhoto(seg)
     source = 'analyser'
-    const result = await g.playFile(seg.audio.src, 'voice', ms + 4000)
+    const result = await g.playFile(seg.audio.src, 'voice', seg.audio.durationMs ? ms + 4000 : undefined)
     if (result === 'failed') await chime(0)
     return result
   }
@@ -251,7 +258,7 @@ const playSegment = async (seg) => {
     return speak(seg.text, ms)
   }
   source = 'analyser'
-  return g.playFile(seg.audio.src, 'voice', ms + 8000)
+  return g.playFile(seg.audio.src, 'voice')
 }
 
 const resetPointer = () => {
@@ -306,7 +313,8 @@ const io = {
   sleep,
   warmUp: async (current) => {
     const g = ensureGraph()
-    await g.resume()
+    const ready = await Promise.race([g.resume().then(() => true, () => false), sleep(2500).then(() => false)])
+    if (!ready) window.addEventListener('pointerup', () => g.resume().catch(() => {}), { once: true })
     current.segments.filter((s) => s.kind === 'song').forEach(prepareSong)
   },
   tune,
@@ -343,7 +351,8 @@ const dial = createDial({
   calm: () => calmMode,
   onOn: () => {
     const g = ensureGraph()
-    g.resume()
+    g.resume().catch(() => {})
+    g.unlock()
     g.click()
     powerOn = true
     knob.setAttribute('aria-checked', 'true')

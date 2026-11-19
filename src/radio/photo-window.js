@@ -51,42 +51,49 @@ export const mountDepthPhoto = async (canvas, { src, depthSrc }) => {
   const [image, depth] = await Promise.all([load(src), load(depthSrc)])
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false })
   if (!gl) throw new Error('WebGL2 is not available')
-  const program = gl.createProgram()
-  gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT))
-  gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG))
-  gl.linkProgram(program)
-  gl.useProgram(program)
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
-  const loc = gl.getAttribLocation(program, 'p')
-  gl.enableVertexAttribArray(loc)
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
-  texture(gl, 0, image)
-  texture(gl, 1, depth)
-  gl.uniform1i(gl.getUniformLocation(program, 'img'), 0)
-  gl.uniform1i(gl.getUniformLocation(program, 'depth'), 1)
-  const drift = gl.getUniformLocation(program, 'drift')
-
-  const fit = () => {
-    const ratio = Math.min(2, window.devicePixelRatio || 1)
-    const w = Math.max(2, Math.round(canvas.clientWidth * ratio))
-    const h = Math.max(2, Math.round(canvas.clientHeight * ratio))
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w
-      canvas.height = h
-      gl.viewport(0, 0, w, h)
-    }
-  }
-
   let raf = 0
-  const draw = (now) => {
-    fit()
-    const phase = (now / 12000) * Math.PI * 2
-    gl.uniform2f(drift, Math.cos(phase) * 0.02, Math.sin(phase) * 0.02)
-    gl.drawArrays(gl.TRIANGLES, 0, 3)
+  try {
+    const program = gl.createProgram()
+    gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT))
+    gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG))
+    gl.linkProgram(program)
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program))
+    gl.useProgram(program)
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+    const loc = gl.getAttribLocation(program, 'p')
+    gl.enableVertexAttribArray(loc)
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+    texture(gl, 0, image)
+    texture(gl, 1, depth)
+    gl.uniform1i(gl.getUniformLocation(program, 'img'), 0)
+    gl.uniform1i(gl.getUniformLocation(program, 'depth'), 1)
+    const drift = gl.getUniformLocation(program, 'drift')
+
+    const fit = () => {
+      const ratio = Math.min(2, window.devicePixelRatio || 1)
+      const w = Math.max(2, Math.round(canvas.clientWidth * ratio))
+      const h = Math.max(2, Math.round(canvas.clientHeight * ratio))
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w
+        canvas.height = h
+        gl.viewport(0, 0, w, h)
+      }
+    }
+
+    const draw = (now) => {
+      fit()
+      const phase = (now / 12000) * Math.PI * 2
+      gl.uniform2f(drift, Math.cos(phase) * 0.02, Math.sin(phase) * 0.02)
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+      raf = requestAnimationFrame(draw)
+    }
     raf = requestAnimationFrame(draw)
+  } catch (err) {
+    cancelAnimationFrame(raf)
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    throw err
   }
-  raf = requestAnimationFrame(draw)
   return {
     destroy() {
       cancelAnimationFrame(raf)

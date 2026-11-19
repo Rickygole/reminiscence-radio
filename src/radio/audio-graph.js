@@ -66,6 +66,10 @@ export const createAudioGraph = () => {
   ctx.createMediaElementSource(element).connect(input)
 
   let current = null
+  let settle = null
+  let playToken = 0
+  let activeTimer = 0
+  let unlocked = false
 
   const setBand = (kind) => low.frequency.setTargetAtTime(kind === 'music' ? 3800 : 5000, ctx.currentTime, 0.05)
 
@@ -73,6 +77,33 @@ export const createAudioGraph = () => {
     ctx,
     element,
     resume: () => ctx.resume(),
+    unlock() {
+      if (unlocked) return
+      unlocked = true
+      const bytes = new Uint8Array(44 + 1600)
+      const view = new DataView(bytes.buffer)
+      const text = (at, s) => [...s].forEach((c, i) => bytes.set([c.charCodeAt(0)], at + i))
+      text(0, 'RIFF')
+      view.setUint32(4, 36 + 1600, true)
+      text(8, 'WAVEfmt ')
+      view.setUint32(16, 16, true)
+      view.setUint16(20, 1, true)
+      view.setUint16(22, 1, true)
+      view.setUint32(24, 8000, true)
+      view.setUint32(28, 16000, true)
+      view.setUint16(32, 2, true)
+      view.setUint16(34, 16, true)
+      text(36, 'data')
+      view.setUint32(40, 1600, true)
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+      element.src = url
+      element.play().then(
+        () => {
+          if (element.src === url) element.pause()
+        },
+        () => {}
+      ).finally(() => URL.revokeObjectURL(url))
+    },
     setBand,
     rms() {
       analyser.getFloatTimeDomainData(samples)
@@ -119,25 +150,43 @@ export const createAudioGraph = () => {
       })
     },
     playFile(url, kind, timeoutMs) {
+      settle?.('ended')
       setBand(kind)
+      const token = ++playToken
       element.src = url
       return new Promise((resolve) => {
         let done = false
+        const arm = (ms) => {
+          clearTimeout(activeTimer)
+          activeTimer = setTimeout(() => finish('ended'), ms)
+        }
         const finish = (result) => {
           if (done) return
           done = true
-          clearTimeout(timer)
-          element.onended = null
-          element.onerror = null
+          if (token === playToken) {
+            clearTimeout(activeTimer)
+            element.onended = null
+            element.onerror = null
+            element.onloadedmetadata = null
+            settle = null
+          }
           resolve(result)
         }
-        const timer = setTimeout(() => finish('ended'), timeoutMs)
+        settle = finish
+        arm(timeoutMs ?? 60000)
+        if (timeoutMs === undefined) {
+          element.onloadedmetadata = () => {
+            if (token === playToken && Number.isFinite(element.duration)) arm(element.duration * 1000 + 5000)
+          }
+        }
         element.onended = () => finish('ended')
         element.onerror = () => finish('failed')
         element.play().catch(() => finish('failed'))
       })
     },
     stop() {
+      clearTimeout(activeTimer)
+      settle?.('ended')
       try {
         current?.stop()
       } catch {
