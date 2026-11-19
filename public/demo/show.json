@@ -16,7 +16,7 @@
       "kind": "host",
       "text": "Good morning, Rose. Your grandson Leo sent you something.",
       "audio": {
-        "speak": true
+        "src": "media/tts-98277da1fd70e06d.mp3"
       },
       "sourceItemIds": [
         "tg-1042",
@@ -51,7 +51,7 @@
       "kind": "host",
       "text": "Mia wanted you to know: The tomatoes you planted are finally ripe.",
       "audio": {
-        "speak": true
+        "src": "media/tts-30f818ee644d1ece.mp3"
       },
       "sourceItemIds": [
         "tg-1041"
@@ -83,7 +83,7 @@
       "kind": "host",
       "text": "Here is a note from your caregiver.",
       "audio": {
-        "speak": true
+        "src": "media/tts-478e4afc6e2950bf.mp3"
       },
       "sourceItemIds": [
         "rem-pill",
@@ -97,7 +97,7 @@
       "time": "09:00",
       "author": "caregiver",
       "audio": {
-        "speak": true
+        "src": "media/tts-eeee7a9093650ef3.mp3"
       },
       "sourceItemIds": [
         "rem-pill"
@@ -111,7 +111,7 @@
       "time": "12:00",
       "author": "caregiver",
       "audio": {
-        "speak": true
+        "src": "media/tts-9a08c8e0faf0593f.mp3"
       },
       "sourceItemIds": [
         "rem-lunch"
@@ -125,7 +125,7 @@
       "year": 1965,
       "sourceUrl": "https://www.nasa.gov/",
       "audio": {
-        "speak": true
+        "src": "media/tts-3f1c9af8ed42258c.mp3"
       },
       "sourceItemIds": [
         "story-gemini7"
@@ -157,7 +157,7 @@
       "kind": "host",
       "text": "That is all for now, Rose. Have a lovely day.",
       "audio": {
-        "speak": true
+        "src": "media/tts-8f19482172c2b4d3.mp3"
       },
       "sourceItemIds": []
     }
