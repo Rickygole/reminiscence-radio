@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reminiscence Radio</title>
+<meta name="description" content="A tabletop tube radio that plays a calm daily show of family messages, old songs and gentle stories.">
+<meta name="theme-color" content="#F3E9D2">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body class="page-radio">
+<a class="skip" href="#knob">Skip to the radio knob</a>
+<main class="stage" id="stage">
+<h1 class="sr-only">Reminiscence Radio</h1>
+<div class="rig" id="rig">
+<figure class="photo" id="photo" aria-hidden="true">
+<div class="photo-frame">
+<div class="photo-mat">
+<div class="shot">
+<img id="photo-img" alt="" decoding="async">
+</div>
+</div>
+</div>
+<figcaption class="photo-plate" id="photo-credit"></figcaption>
+</figure>
+<div class="scene" id="scene">
+<div class="radio" id="radio" data-power="off"></div>
+</div>
+</div>
+<p class="hint" id="hint">Turn the big knob to listen</p>
+<p class="caption-below" id="caption-below" aria-hidden="true"></p>
+<div class="sr-only" id="live" role="status" aria-live="polite"></div>
+</main>
+<nav class="sitenav" aria-label="Pages">
+<span class="brand">Reminiscence Radio</span>
+<a href="./" aria-current="page">Radio</a>
+<a href="./control.html">Control Room</a>
+<a href="./caregiver.html">Caregiver</a>
+<button type="button" class="plate" id="about-open" aria-haspopup="dialog">About</button>
+</nav>
+<dialog id="about" aria-labelledby="about-title">
+<form method="dialog">
+<h2 id="about-title">About this radio</h2>
+<ul>
+<li>Rose is a fictional listener. No real patient data is used.</li>
+<li>The host is a computer voice. Family messages are recordings made by the people who sent them. Right now the voice and photo are placeholders.</li>
+<li>The songs are made by code written for this project and are free to use (CC0).</li>
+<li>This is not medical advice. Caregiver reminders play exactly as the caregiver wrote them.</li>
+<li>No voice is ever cloned.</li>
+</ul>
+<button class="btn" value="close">Close</button>
+</form>
+</dialog>
+<script type="module" src="/src/radio/main.js"></script>
+</body>
+</html>
